@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOP 배달</title>
+<style>
+body {
+  margin: 0;
+  background: #101014;
+  color: white;
+  font-family: sans-serif;
+}
+header {
+  background: #181818;
+  padding: 25px;
+  text-align: center;
+}
+h1 { color: #e8b85c; font-size: 48px; }
+button {
+  background: #e8b85c;
+  color: #111;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 0;
+  width: 100%;
+  font-size: 18px;
+  font-weight: bold;
+}
+.page { padding: 20px; }
+.card {
+  background: #222229;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>SOP</h1>
+<p>SECRET ONE PARTNER</p>
+<p>시크릿 원 파트너</p>
+</header>
+
+<div class="page" id="app">
+<h2>환영합니다!</h2>
+<p>음식 배달 · 퀵서비스 · 심부름</p>
+<button onclick="home()">시작하기</button>
+</div>
+
+<script>
+function home() {
+document.getElementById("app").innerHTML = `
+<h2>서비스 선택</h2>
+<div class="card">
+<h3>🍔 음식 배달</h3>
+<button onclick="order('음식 배달')">주문하기</button>
+</div>
+<div class="card">
+<h3>🛵 퀵서비스</h3>
+<button onclick="order('퀵서비스')">신청하기</button>
+</div>
+<div class="card">
+<h3>📦 심부름</h3>
+<button onclick="order('심부름')">신청하기</button>
+</div>
+<button onclick="history()">주문 내역</button>
+`;
+}
+
+function order(type) {
+document.getElementById("app").innerHTML = `
+<h2>${type}</h2>
+<input id="detail" placeholder="요청 내용을 입력하세요"
+style="width:100%;padding:15px">
+<button onclick="save('${type}')">주문하기</button>
+<button onclick="home()">뒤로가기</button>
+`;
+}
+
+function save(type) {
+let detail = document.getElementById("detail").value;
+if (!detail.trim()) {
+alert("요청 내용을 입력하세요.");
+return;
+}
+let orders = JSON.parse(localStorage.getItem("orders") || "[]");
+orders.push({type, detail, date:new Date().toLocaleString()});
+localStorage.setItem("orders", JSON.stringify(orders));
+alert("주문이 저장되었습니다.");
+home();
+}
+
+function history() {
+let orders = JSON.parse(localStorage.getItem("orders") || "[]");
+document.getElementById("app").innerHTML =
+"<h2>주문 내역</h2>" +
+(orders.length ? orders.map(o =>
+`<div class="card"><b>${o.type}</b><p>${o.detail}</p><small>${o.date}</small></div>`
+).join("") : "<p>주문 내역이 없습니다.</p>") +
+'<button onclick="home()">홈으로</button>';
+}
+</script>
+
+</body>
+</html>
