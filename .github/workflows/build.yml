@@ -2,8 +2,7 @@ name: Build SOP APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -20,21 +19,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Find Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          find /usr/local/lib/android/sdk -name sdkmanager -type f
+
       - name: Install Android SDK
         run: |
-          echo "y" | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
-
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: SOP-Delivery-APK
-          path: app/build/outputs/apk/debug/*.apk
+          SDKMANAGER=$(find /usr/local/lib/android/sdk -name sdkmanager -type f | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "Android sdk
