@@ -49,10 +49,30 @@ main{padding:20px}
 h2{font-size:25px}
 .card{background:#222;border-radius:16px;padding:20px;margin:15px 0}
 button{background:#e8b85c;color:#111;border:0;border-radius:12px;padding:15px;width:100%;font-size:17px;font-weight:bold;margin:8px 0}
-input,textarea{width:100%;padding:15px;margin:8px 0;background:#333;color:white;border:1px solid #555;border-radius:10px;font-size:16px}
-.hidden{display:none}
+input,textarea{width:100%;padding:15px;margin:8px 0;background:#333;color:white;border:1px solid <!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOP 배달</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101014;color:#fff;font-family:Arial,sans-serif}
+header{background:#181818;text-align:center;padding:24px 15px}
+h1{color:#e8b85c;font-size:48px;margin:0}
+header p{margin:6px}
+main{padding:20px;max-width:650px;margin:auto}
+h2{color:#e8b85c}
+.card{background:#222;border-radius:16px;padding:18px;margin:14px 0}
+button{background:#e8b85c;color:#111;border:0;border-radius:12px;padding:15px;width:100%;font-size:16px;font-weight:bold;margin:7px 0}
+button:disabled{opacity:.5}
+input,textarea{width:100%;padding:14px;margin:8px 0;background:#333;color:white;border:1px solid #555;border-radius:10px;font-size:16px}
 .price{color:#e8b85c;font-weight:bold}
-.small{color:#aaa;font-size:14px}
+.small{color:#aaa;font-size:13px}
+.error{color:#ff8585}
+.success{color:#83e5a0}
+.row{display:flex;gap:10px}
+.row button{flex:1}
 </style>
 </head>
 <body>
@@ -64,182 +84,163 @@ input,textarea{width:100%;padding:15px;margin:8px 0;background:#333;color:white;
 </header>
 
 <main id="app">
-<h2>환영합니다!</h2>
-<p>음식 배달 · 퀵서비스 · 심부름</p>
-<button onclick="home()">시작하기</button>
+<h2>연결 중...</h2>
+<p>Firebase 로그인 서비스를 확인하고 있습니다.</p>
 </main>
 
-<script>
+<script type="module">
+import {initializeApp} from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+} from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDqB3PZ5SBwo1JrxBSqSFiJByB5o23X_Xg",
+authDomain:"sop-delivery.firebaseapp.com",
+projectId:"sop-delivery",
+storageBucket:"sop-delivery.firebasestorage.app",
+messagingSenderId:"169609846426",
+appId:"1:169609846426:web:4efbc158d9abeca1214923"
+};
+
+const firebaseApp=initializeApp(firebaseConfig);
+const auth=getAuth(firebaseApp);
+
+const app=document.getElementById("app");
+
+let user=null;
 let cart=[];
-let restaurants=[
-{name:"SOP 치킨",menu:[
+
+const restaurants=[
+{
+name:"SOP 치킨",
+menu:[
 {name:"후라이드 치킨",price:19000},
-{name:"양념 치킨",price:21000}]},
-{name:"SOP 피자",menu:[
+{name:"양념 치킨",price:21000}
+]
+},
+{
+name:"SOP 피자",
+menu:[
 {name:"콤비네이션 피자",price:18000},
-{name:"치즈 피자",price:16000}]},
-{name:"SOP 분식",menu:[
+{name:"치즈 피자",price:16000}
+]
+},
+{
+name:"SOP 분식",
+menu:[
 {name:"떡볶이",price:5000},
-{name:"김밥",price:4000}]}
+{name:"김밥",price:4000}
+]
+}
 ];
 
 function money(n){
-return n.toLocaleString()+"원";
+return Number(n||0).toLocaleString("ko-KR")+"원";
 }
 
-function home(){
-document.getElementById("app").innerHTML=`
-<h2>서비스 선택</h2>
-<div class="card">
-<h3>🍔 음식 배달</h3>
-<button onclick="food()">음식 주문하기</button>
-</div>
-<div class="card">
-<h3>🚚 퀵서비스</h3>
-<button onclick="request('퀵서비스')">신청하기</button>
-</div>
-<div class="card">
-<h3>📦 심부름</h3>
-<button onclick="request('심부름')">신청하기</button>
-</div>
-<button onclick="historyPage()">📋 주문 내역</button>
-`;
+function safe(value){
+return String(value??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+})[c]);
 }
 
-function food(){
-let html="<h2>🍔 음식점 선택</h2>";
-restaurants.forEach((r,i)=>{
-html+=`
-<div class="card">
-<h3>${r.name}</h3>
-<button onclick="menuPage(${i})">메뉴 보기</button>
-</div>`;
-});
-html+=`<button onclick="cartPage()">🛒 장바구니 (${cart.length})</button>
-<button onclick="home()">뒤로가기</button>`;
-document.getElementById("app").innerHTML=html;
+function requireUser(){
+if(!user){
+loginPage();
+return false;
+}
+return true;
 }
 
-function menuPage(i){
-let r=restaurants[i];
-let html=`<h2>${r.name}</h2>`;
-r.menu.forEach((m,j)=>{
-html+=`
-<div class="card">
-<h3>${m.name}</h3>
-<p class="price">${money(m.price)}</p>
-<button onclick="addCart(${i},${j})">장바구니 담기</button>
-</div>`;
-});
-html+=`<button onclick="cartPage()">장바구니 보기</button>
-<button onclick="food()">뒤로가기</button>`;
-document.getElementById("app").innerHTML=html;
+function orderKey(){
+return "sop_orders_"+user.uid;
 }
 
-function addCart(i,j){
-cart.push({...restaurants[i].menu[j]});
-alert("장바구니에 담았습니다!");
+function readOrders(){
+try{
+const data=JSON.parse(localStorage.getItem(orderKey())||"[]");
+return Array.isArray(data)?data:[];
+}catch(e){
+return [];
 }
-
-function cartPage(){
-let total=cart.reduce((s,m)=>s+m.price,0);
-let html="<h2>🛒 장바구니</h2>";
-cart.forEach((m,i)=>{
-html+=`
-<div class="card">
-${m.name}<p class="price">${money(m.price)}</p>
-<button onclick="removeCart(${i})">삭제</button>
-</div>`;
-});
-html+=`
-<h3>총 금액: ${money(total)}</h3>
-${cart.length?`
-<input id="address" placeholder="배달 주소 입력">
-<button onclick="checkout()">주문하기</button>`:"<p>장바구니가 비어 있습니다.</p>"}
-<button onclick="food()">음식점으로 돌아가기</button>`;
-document.getElementById("app").innerHTML=html;
-}
-
-function removeCart(i){
-cart.splice(i,1);
-cartPage();
 }
 
 function saveOrder(order){
-let orders=JSON.parse(localStorage.getItem("orders")||"[]");
-orders.push(order);
-localStorage.setItem("orders",JSON.stringify(orders));
-}
-
-function checkout(){
-let address=document.getElementById("address").value.trim();
-if(!address){alert("배달 주소를 입력하세요.");return;}
-let total=cart.reduce((s,m)=>s+m.price,0);
-saveOrder({
-type:"음식 배달",
-detail:cart.map(m=>m.name).join(", "),
-address:address,
-total:total,
-date:new Date().toLocaleString()
+const orders=readOrders();
+orders.push({
+...order,
+date:new Date().toLocaleString("ko-KR")
 });
-cart=[];
-alert("시연용 주문이 저장되었습니다!");
-home();
+localStorage.setItem(orderKey(),JSON.stringify(orders));
 }
 
-function request(type){
-document.getElementById("app").innerHTML=`
-<h2>${type} 신청</h2>
-<input id="start" placeholder="출발지 또는 요청 주소">
-<input id="end" placeholder="도착지 (필요한 경우)">
-<textarea id="detail" placeholder="요청 내용을 입력하세요"></textarea>
-<button onclick="saveRequest('${type}')">신청하기</button>
-<button onclick="home()">뒤로가기</button>`;
-}
-
-function saveRequest(type){
-let start=document.getElementById("start").value.trim();
-let end=document.getElementById("end").value.trim();
-let detail=document.getElementById("detail").value.trim();
-if(!start||!detail){
-alert("주소와 요청 내용을 입력하세요.");
-return;
-}
-saveOrder({
-type:type,
-detail:detail,
-address:start+(end?" → "+end:""),
-total:0,
-date:new Date().toLocaleString()
-});
-alert("시연용 신청이 저장되었습니다!");
-home();
-}
-
-function historyPage(){
-let orders=JSON.parse(localStorage.getItem("orders")||"[]");
-let html="<h2>📋 주문 내역</h2>";
-if(!orders.length)html+="<p>주문 내역이 없습니다.</p>";
-orders.slice().reverse().forEach(o=>{
-html+=`
+function loginPage(){
+app.innerHTML=`
+<h2>🔐 SOP 로그인</h2>
 <div class="card">
-<h3>${o.type}</h3>
-<p>${escapeHtml(o.detail)}</p>
-<p>${escapeHtml(o.address)}</p>
-<p class="price">${money(o.total)}</p>
-<p class="small">${escapeHtml(o.date)}</p>
-</div>`;
-});
-html+=`<button onclick="home()">홈으로</button>`;
-document.getElementById("app").innerHTML=html;
+<input id="email" type="email"
+autocomplete="email" placeholder="이메일">
+
+<input id="password" type="password"
+autocomplete="current-password"
+placeholder="비밀번호 (6자 이상)">
+
+<button id="loginBtn">로그인</button>
+<button id="signupBtn">회원가입</button>
+
+<p id="message" class="small"></p>
+</div>
+<p class="small">
+회원가입 시 Firebase Authentication에
+계정이 생성됩니다.
+</p>
+`;
+
+document.getElementById("loginBtn").onclick=login;
+document.getElementById("signupBtn").onclick=signup;
 }
 
-function escapeHtml(s){
-return String(s??"").replace(/[&<>"']/g,c=>({
-"&":"&amp;","<":"&lt;",">":"&gt;",
-'"':"&quot;","'":"&#39;"
-})[c]);
+function credentials(){
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
+
+if(!email||!password){
+throw new Error("이메일과 비밀번호를 입력하세요.");
 }
-</script>
-</body>
-</html>
+if(password.length<6){
+throw new Error("비밀번호는 6자 이상 입력하세요.");
+}
+return {email,password};
+}
+
+function showMessage(message){
+const el=document.getElementById("message");
+if(el){
+el.className="error";
+el.textContent=message;
+}
+}
+
+function authError(error){
+switch(error.code){
+case "auth/email-already-in-use":
+return "이미 가입된 이메일입니다.";
+case "auth/invalid-email":
+return "이메일 주소를 확인하세요.";
+case "auth/weak-password":
+return "더 안전한 비밀번호를 입력하세요.";
+case "auth/invalid-credential":
+return "이메일 또는 비밀번호를 확인하세요.";
+case "auth/too
