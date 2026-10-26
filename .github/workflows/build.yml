@@ -24,8 +24,9 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           find /usr/local/lib/android/sdk -name sdkmanager -type f
 
-      - name: Install Android SDK
+            - name: Install Android SDK
         run: |
-          SDKMANAGER=$(find /usr/local/lib/android/sdk -name sdkmanager -type f | head -n 1)
-          if [ -z "$SDKMANAGER" ]; then
-            echo "Android sdk
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          chmod +x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
