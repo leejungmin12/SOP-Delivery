@@ -33,8 +33,26 @@ button {
   background: #222229;
   padding: 20px;
   border-radius: 15px;
-  margin-bottom: 15px;
-}
+  margin-bottom: <!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOP 배달</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101014;color:white;font-family:Arial,sans-serif}
+header{background:#181818;text-align:center;padding:30px 15px}
+h1{color:#e8b85c;font-size:52px;margin:0}
+header p{margin:8px}
+main{padding:20px}
+h2{font-size:25px}
+.card{background:#222;border-radius:16px;padding:20px;margin:15px 0}
+button{background:#e8b85c;color:#111;border:0;border-radius:12px;padding:15px;width:100%;font-size:17px;font-weight:bold;margin:8px 0}
+input,textarea{width:100%;padding:15px;margin:8px 0;background:#333;color:white;border:1px solid #555;border-radius:10px;font-size:16px}
+.hidden{display:none}
+.price{color:#e8b85c;font-weight:bold}
+.small{color:#aaa;font-size:14px}
 </style>
 </head>
 <body>
@@ -45,65 +63,183 @@ button {
 <p>시크릿 원 파트너</p>
 </header>
 
-<div class="page" id="app">
+<main id="app">
 <h2>환영합니다!</h2>
 <p>음식 배달 · 퀵서비스 · 심부름</p>
 <button onclick="home()">시작하기</button>
-</div>
+</main>
 
 <script>
-function home() {
-document.getElementById("app").innerHTML = `
+let cart=[];
+let restaurants=[
+{name:"SOP 치킨",menu:[
+{name:"후라이드 치킨",price:19000},
+{name:"양념 치킨",price:21000}]},
+{name:"SOP 피자",menu:[
+{name:"콤비네이션 피자",price:18000},
+{name:"치즈 피자",price:16000}]},
+{name:"SOP 분식",menu:[
+{name:"떡볶이",price:5000},
+{name:"김밥",price:4000}]}
+];
+
+function money(n){
+return n.toLocaleString()+"원";
+}
+
+function home(){
+document.getElementById("app").innerHTML=`
 <h2>서비스 선택</h2>
 <div class="card">
 <h3>🍔 음식 배달</h3>
-<button onclick="order('음식 배달')">주문하기</button>
+<button onclick="food()">음식 주문하기</button>
 </div>
 <div class="card">
-<h3>🛵 퀵서비스</h3>
-<button onclick="order('퀵서비스')">신청하기</button>
+<h3>🚚 퀵서비스</h3>
+<button onclick="request('퀵서비스')">신청하기</button>
 </div>
 <div class="card">
 <h3>📦 심부름</h3>
-<button onclick="order('심부름')">신청하기</button>
+<button onclick="request('심부름')">신청하기</button>
 </div>
-<button onclick="history()">주문 내역</button>
+<button onclick="historyPage()">📋 주문 내역</button>
 `;
 }
 
-function order(type) {
-document.getElementById("app").innerHTML = `
-<h2>${type}</h2>
-<input id="detail" placeholder="요청 내용을 입력하세요"
-style="width:100%;padding:15px">
-<button onclick="save('${type}')">주문하기</button>
-<button onclick="home()">뒤로가기</button>
-`;
+function food(){
+let html="<h2>🍔 음식점 선택</h2>";
+restaurants.forEach((r,i)=>{
+html+=`
+<div class="card">
+<h3>${r.name}</h3>
+<button onclick="menuPage(${i})">메뉴 보기</button>
+</div>`;
+});
+html+=`<button onclick="cartPage()">🛒 장바구니 (${cart.length})</button>
+<button onclick="home()">뒤로가기</button>`;
+document.getElementById("app").innerHTML=html;
 }
 
-function save(type) {
-let detail = document.getElementById("detail").value;
-if (!detail.trim()) {
-alert("요청 내용을 입력하세요.");
-return;
+function menuPage(i){
+let r=restaurants[i];
+let html=`<h2>${r.name}</h2>`;
+r.menu.forEach((m,j)=>{
+html+=`
+<div class="card">
+<h3>${m.name}</h3>
+<p class="price">${money(m.price)}</p>
+<button onclick="addCart(${i},${j})">장바구니 담기</button>
+</div>`;
+});
+html+=`<button onclick="cartPage()">장바구니 보기</button>
+<button onclick="food()">뒤로가기</button>`;
+document.getElementById("app").innerHTML=html;
 }
-let orders = JSON.parse(localStorage.getItem("orders") || "[]");
-orders.push({type, detail, date:new Date().toLocaleString()});
-localStorage.setItem("orders", JSON.stringify(orders));
-alert("주문이 저장되었습니다.");
+
+function addCart(i,j){
+cart.push({...restaurants[i].menu[j]});
+alert("장바구니에 담았습니다!");
+}
+
+function cartPage(){
+let total=cart.reduce((s,m)=>s+m.price,0);
+let html="<h2>🛒 장바구니</h2>";
+cart.forEach((m,i)=>{
+html+=`
+<div class="card">
+${m.name}<p class="price">${money(m.price)}</p>
+<button onclick="removeCart(${i})">삭제</button>
+</div>`;
+});
+html+=`
+<h3>총 금액: ${money(total)}</h3>
+${cart.length?`
+<input id="address" placeholder="배달 주소 입력">
+<button onclick="checkout()">주문하기</button>`:"<p>장바구니가 비어 있습니다.</p>"}
+<button onclick="food()">음식점으로 돌아가기</button>`;
+document.getElementById("app").innerHTML=html;
+}
+
+function removeCart(i){
+cart.splice(i,1);
+cartPage();
+}
+
+function saveOrder(order){
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+orders.push(order);
+localStorage.setItem("orders",JSON.stringify(orders));
+}
+
+function checkout(){
+let address=document.getElementById("address").value.trim();
+if(!address){alert("배달 주소를 입력하세요.");return;}
+let total=cart.reduce((s,m)=>s+m.price,0);
+saveOrder({
+type:"음식 배달",
+detail:cart.map(m=>m.name).join(", "),
+address:address,
+total:total,
+date:new Date().toLocaleString()
+});
+cart=[];
+alert("시연용 주문이 저장되었습니다!");
 home();
 }
 
-function history() {
-let orders = JSON.parse(localStorage.getItem("orders") || "[]");
-document.getElementById("app").innerHTML =
-"<h2>주문 내역</h2>" +
-(orders.length ? orders.map(o =>
-`<div class="card"><b>${o.type}</b><p>${o.detail}</p><small>${o.date}</small></div>`
-).join("") : "<p>주문 내역이 없습니다.</p>") +
-'<button onclick="home()">홈으로</button>';
+function request(type){
+document.getElementById("app").innerHTML=`
+<h2>${type} 신청</h2>
+<input id="start" placeholder="출발지 또는 요청 주소">
+<input id="end" placeholder="도착지 (필요한 경우)">
+<textarea id="detail" placeholder="요청 내용을 입력하세요"></textarea>
+<button onclick="saveRequest('${type}')">신청하기</button>
+<button onclick="home()">뒤로가기</button>`;
+}
+
+function saveRequest(type){
+let start=document.getElementById("start").value.trim();
+let end=document.getElementById("end").value.trim();
+let detail=document.getElementById("detail").value.trim();
+if(!start||!detail){
+alert("주소와 요청 내용을 입력하세요.");
+return;
+}
+saveOrder({
+type:type,
+detail:detail,
+address:start+(end?" → "+end:""),
+total:0,
+date:new Date().toLocaleString()
+});
+alert("시연용 신청이 저장되었습니다!");
+home();
+}
+
+function historyPage(){
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+let html="<h2>📋 주문 내역</h2>";
+if(!orders.length)html+="<p>주문 내역이 없습니다.</p>";
+orders.slice().reverse().forEach(o=>{
+html+=`
+<div class="card">
+<h3>${o.type}</h3>
+<p>${escapeHtml(o.detail)}</p>
+<p>${escapeHtml(o.address)}</p>
+<p class="price">${money(o.total)}</p>
+<p class="small">${escapeHtml(o.date)}</p>
+</div>`;
+});
+html+=`<button onclick="home()">홈으로</button>`;
+document.getElementById("app").innerHTML=html;
+}
+
+function escapeHtml(s){
+return String(s??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",
+'"':"&quot;","'":"&#39;"
+})[c]);
 }
 </script>
-
 </body>
 </html>
