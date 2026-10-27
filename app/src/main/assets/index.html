@@ -2,57 +2,26 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOP 배달</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:#101014;
-  color:white;
-  font-family:Arial,sans-serif;
-}
-header{
-  background:#181818;
-  padding:35px 20px;
-  text-align:center;
-}
-h1{
-  color:#e8b85c;
-  font-size:55px;
-  margin:0;
-}
-main{padding:20px}
+body{margin:0;background:#101014;color:white;font-family:Arial,sans-serif}
+header{background:#181818;text-align:center;padding:25px 12px}
+h1{color:#e8b85c;font-size:50px;margin:0}
+header p{margin:5px}
+main{padding:18px;max-width:650px;margin:auto}
 h2{color:#e8b85c}
-.card{
-  background:#222;
-  padding:20px;
-  border-radius:15px;
-}
-input,button{
-  width:100%;
-  padding:15px;
-  margin:8px 0;
-  border-radius:10px;
-  font-size:16px;
-}
-input{
-  background:#333;
-  color:white;
-  border:1px solid #555;
-}
-button{
-  background:#e8b85c;
-  color:#111;
-  border:0;
-  font-weight:bold;
-}
+.card{background:#222;border-radius:15px;padding:18px;margin:14px 0}
+button{width:100%;background:#e8b85c;color:#111;border:0;border-radius:10px;padding:14px;margin:7px 0;font-size:16px;font-weight:bold}
 button:disabled{opacity:.5}
-#message{overflow-wrap:anywhere}
+input,textarea{width:100%;background:#333;color:white;border:1px solid #555;border-radius:10px;padding:14px;margin:8px 0;font-size:16px}
+.price{color:#e8b85c;font-weight:bold}
+.small{color:#aaa;font-size:13px}
+.error{color:#ff9292;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
-
 <header>
 <h1>SOP</h1>
 <p>SECRET ONE PARTNER</p>
@@ -65,124 +34,380 @@ button:disabled{opacity:.5}
 </main>
 
 <script>
-const appScreen=document.getElementById("app");
-
-window.addEventListener("error",function(e){
-  showError("스크립트 오류: "+(e.message||"파일 로딩 실패"));
-});
-
-window.addEventListener("unhandledrejection",function(e){
-  showError("연결 오류: "+String(e.reason));
-});
-
-function showError(message){
-  appScreen.innerHTML="";
-  const title=document.createElement("h2");
-  title.textContent="연결 오류";
-  const detail=document.createElement("p");
-  detail.textContent=message;
-  appScreen.append(title,detail);
+window.showSopError=function(message){
+const el=document.getElementById("app");
+el.innerHTML="";
+const h=document.createElement("h2");
+h.textContent="연결 오류";
+const p=document.createElement("p");
+p.className="error";
+p.textContent=String(message);
+el.append(h,p);
+};
+window.addEventListener("error",e=>{
+if(document.getElementById("app").textContent.includes("연결 중...")){
+showSopError(e.message||"스크립트를 불러오지 못했습니다.");
 }
-
-setTimeout(function(){
-  if(appScreen.textContent.includes("연결 중...")){
-    showError("15초 동안 Firebase 응답이 없습니다. 인터넷 연결과 WebView 설정을 확인하세요.");
-  }
+});
+window.addEventListener("unhandledrejection",e=>{
+if(document.getElementById("app").textContent.includes("연결 중...")){
+showSopError(e.reason);
+}
+});
+setTimeout(()=>{
+if(document.getElementById("app").textContent.includes("연결 중...")){
+showSopError("Firebase 연결 시간이 초과되었습니다.");
+}
 },15000);
 </script>
 
 <script type="module">
 import {initializeApp} from
 "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-
 import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
 } from
 "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const firebaseConfig={
-  apiKey:"AIzaSyDqB3PZ5SBwo1JrxBSqSFiJByB5o23X_Xg",
-  authDomain:"sop-delivery.firebaseapp.com",
-  projectId:"sop-delivery",
-  appId:"1:169609846426:web:4efbc158d9abeca1214923"
+apiKey:"AIzaSyDqB3PZ5SBwo1JrxBSqSFiJByB5o23X_Xg",
+authDomain:"sop-delivery.firebaseapp.com",
+projectId:"sop-delivery",
+storageBucket:"sop-delivery.firebasestorage.app",
+messagingSenderId:"169609846426",
+appId:"1:169609846426:web:4efbc158d9abeca1214923"
 };
 
 const firebaseApp=initializeApp(firebaseConfig);
 const auth=getAuth(firebaseApp);
-const screen=document.getElementById("app");
+const app=document.getElementById("app");
 
-function loginScreen(){
-  screen.innerHTML=`
-    <h2>🔐 SOP 로그인</h2>
-    <div class="card">
-      <input id="email" type="email" placeholder="이메일">
-      <input id="password" type="password"
-        placeholder="비밀번호 (6자 이상)">
-      <button id="login">로그인</button>
-      <button id="signup">회원가입</button>
-      <p id="message"></p>
-    </div>
-  `;
+let user=null;
+let cart=[];
 
-  document.getElementById("login").onclick=
-    ()=>authenticate(false);
-  document.getElementById("signup").onclick=
-    ()=>authenticate(true);
+const restaurants=[
+{name:"SOP 치킨",menu:[
+{name:"후라이드 치킨",price:19000},
+{name:"양념 치킨",price:21000},
+{name:"간장 치킨",price:21000}
+]},
+{name:"SOP 피자",menu:[
+{name:"콤비네이션 피자",price:18000},
+{name:"치즈 피자",price:16000},
+{name:"불고기 피자",price:20000}
+]},
+{name:"SOP 분식",menu:[
+{name:"떡볶이",price:5000},
+{name:"김밥",price:4000},
+{name:"순대",price:6000}
+]}
+];
+
+function money(n){
+return Number(n||0).toLocaleString("ko-KR")+"원";
 }
 
-async function authenticate(isSignup){
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
-  const message=document.getElementById("message");
-
-  if(!email||password.length<6){
-    message.textContent="이메일과 6자 이상의 비밀번호를 입력하세요.";
-    return;
-  }
-
-  document.getElementById("login").disabled=true;
-  document.getElementById("signup").disabled=true;
-
-  try{
-    if(isSignup){
-      await createUserWithEmailAndPassword(auth,email,password);
-    }else{
-      await signInWithEmailAndPassword(auth,email,password);
-    }
-  }catch(error){
-    message.textContent="오류: "+error.code;
-    document.getElementById("login").disabled=false;
-    document.getElementById("signup").disabled=false;
-  }
+function safe(s){
+return String(s??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",
+'"':"&quot;","'":"&#39;"
+})[c]);
 }
 
-function homeScreen(user){
-  screen.innerHTML=`
-    <h2>🎉 SOP 로그인 성공!</h2>
-    <div class="card">
-      <p id="userEmail"></p>
-      <p>Firebase 회원 인증이 정상 작동합니다.</p>
-      <button id="logout">로그아웃</button>
-    </div>
-  `;
-  document.getElementById("userEmail").textContent=user.email;
-  document.getElementById("logout").onclick=()=>signOut(auth);
+function orderKey(){
+return "sop_orders_"+user.uid;
 }
 
-onAuthStateChanged(auth,user=>{
-  if(user){
-    homeScreen(user);
-  }else{
-    loginScreen();
-  }
-},error=>{
-  showError("인증 오류: "+error.code);
+function readOrders(){
+try{
+const value=JSON.parse(localStorage.getItem(orderKey())||"[]");
+return Array.isArray(value)?value:[];
+}catch(e){
+return [];
+}
+}
+
+function saveOrder(order){
+const orders=readOrders();
+orders.push({
+...order,
+date:new Date().toLocaleString("ko-KR"),
+status:"시연용 저장"
+});
+localStorage.setItem(orderKey(),JSON.stringify(orders));
+}
+
+function back(fn){
+const btn=document.createElement("button");
+btn.textContent="← 뒤로가기";
+btn.onclick=fn;
+app.appendChild(btn);
+}
+
+function loginPage(){
+app.innerHTML=`
+<h2>🔐 SOP 로그인</h2>
+<div class="card">
+<input id="email" type="email" placeholder="이메일">
+<input id="password" type="password" placeholder="비밀번호">
+<button id="loginBtn">로그인</button>
+<button id="signupBtn">회원가입</button>
+<p id="message" class="error"></p>
+</div>`;
+document.getElementById("loginBtn").onclick=()=>authenticate(false);
+document.getElementById("signupBtn").onclick=()=>authenticate(true);
+}
+
+async function authenticate(signup){
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
+const message=document.getElementById("message");
+
+if(!email||password.length<6){
+message.textContent="이메일과 6자 이상의 비밀번호를 입력하세요.";
+return;
+}
+
+const loginBtn=document.getElementById("loginBtn");
+const signupBtn=document.getElementById("signupBtn");
+loginBtn.disabled=true;
+signupBtn.disabled=true;
+
+try{
+if(signup){
+await createUserWithEmailAndPassword(auth,email,password);
+}else{
+await signInWithEmailAndPassword(auth,email,password);
+}
+}catch(e){
+message.textContent="오류: "+(e.code||e.message);
+loginBtn.disabled=false;
+signupBtn.disabled=false;
+}
+}
+
+async function logout(){
+try{
+await signOut(auth);
+}catch(e){
+alert("로그아웃 오류: "+e.message);
+}
+}
+
+function home(){
+app.innerHTML=`
+<h2>🏠 SOP 서비스</h2>
+<p class="small">로그인: ${safe(user.email)}</p>
+<div class="card">
+<h3>🍔 음식 배달</h3>
+<button id="food">음식 주문하기</button>
+</div>
+<div class="card">
+<h3>🚚 퀵서비스</h3>
+<button id="quick">퀵서비스 신청</button>
+</div>
+<div class="card">
+<h3>📦 심부름</h3>
+<button id="errand">심부름 신청</button>
+</div>
+<button id="history">📋 내 주문 내역</button>
+<button id="logout">로그아웃</button>
+`;
+document.getElementById("food").onclick=foodPage;
+document.getElementById("quick").onclick=()=>requestPage("퀵서비스");
+document.getElementById("errand").onclick=()=>requestPage("심부름");
+document.getElementById("history").onclick=historyPage;
+document.getElementById("logout").onclick=logout;
+}
+
+function foodPage(){
+app.innerHTML="<h2>🍔 음식점 선택</h2>";
+
+restaurants.forEach((r,i)=>{
+const card=document.createElement("div");
+card.className="card";
+card.innerHTML=`<h3>${safe(r.name)}</h3><button>메뉴 보기</button>`;
+card.querySelector("button").onclick=()=>menuPage(i);
+app.appendChild(card);
+});
+
+const btn=document.createElement("button");
+btn.textContent="🛒 장바구니 ("+cart.reduce((n,x)=>n+x.qty,0)+")";
+btn.onclick=cartPage;
+app.appendChild(btn);
+back(home);
+}
+
+function menuPage(i){
+const r=restaurants[i];
+app.innerHTML="<h2>"+safe(r.name)+"</h2>";
+
+r.menu.forEach((m,j)=>{
+const card=document.createElement("div");
+card.className="card";
+card.innerHTML=`
+<h3>${safe(m.name)}</h3>
+<p class="price">${money(m.price)}</p>
+<button>장바구니 담기</button>`;
+card.querySelector("button").onclick=()=>addCart(i,j);
+app.appendChild(card);
+});
+
+const btn=document.createElement("button");
+btn.textContent="장바구니 보기";
+btn.onclick=cartPage;
+app.appendChild(btn);
+back(foodPage);
+}
+
+function addCart(i,j){
+const r=restaurants[i];
+const m=r.menu[j];
+const found=cart.find(x=>x.restaurant===r.name&&x.name===m.name);
+if(found){
+found.qty++;
+}else{
+cart.push({...m,restaurant:r.name,qty:1});
+}
+alert("장바구니에 담았습니다!");
+}
+
+function cartPage(){
+app.innerHTML="<h2>🛒 장바구니</h2>";
+
+cart.forEach((item,i)=>{
+const card=document.createElement("div");
+card.className="card";
+card.innerHTML=`
+<h3>${safe(item.name)}</h3>
+<p class="small">${safe(item.restaurant)}</p>
+<p>수량: ${item.qty}</p>
+<p class="price">${money(item.price*item.qty)}</p>
+<button class="minus">− 1개</button>
+<button class="plus">+ 1개</button>
+<button class="remove">삭제</button>`;
+card.querySelector(".minus").onclick=()=>{
+item.qty--;
+if(item.qty<=0)cart.splice(i,1);
+cartPage();
+};
+card.querySelector(".plus").onclick=()=>{
+item.qty++;
+cartPage();
+};
+card.querySelector(".remove").onclick=()=>{
+cart.splice(i,1);
+cartPage();
+};
+app.appendChild(card);
+});
+
+const total=cart.reduce((sum,x)=>sum+x.price*x.qty,0);
+const bottom=document.createElement("div");
+bottom.innerHTML=`
+<h3>총 금액: ${money(total)}</h3>
+${cart.length?`
+<input id="address" placeholder="배달 주소 입력">
+<button id="checkout">주문하기</button>
+`:"<p>장바구니가 비어 있습니다.</p>"}
+`;
+app.appendChild(bottom);
+
+const btn=document.getElementById("checkout");
+if(btn)btn.onclick=checkout;
+back(foodPage);
+}
+
+function checkout(){
+const address=document.getElementById("address").value.trim();
+if(!address){
+alert("배달 주소를 입력하세요.");
+return;
+}
+if(!cart.length)return;
+
+saveOrder({
+type:"음식 배달",
+detail:cart.map(x=>x.name+" "+x.qty+"개").join(", "),
+address,
+total:cart.reduce((sum,x)=>sum+x.price*x.qty,0)
+});
+cart=[];
+alert("시연용 주문이 저장되었습니다. 실제 주문은 접수되지 않습니다.");
+home();
+}
+
+function requestPage(type){
+app.innerHTML=`
+<h2>${safe(type)} 신청</h2>
+<div class="card">
+<input id="start" placeholder="출발지 또는 요청 주소">
+<input id="end" placeholder="도착지 (선택)">
+<textarea id="detail" rows="4" placeholder="요청 내용"></textarea>
+<button id="save">신청하기</button>
+</div>`;
+document.getElementById("save").onclick=()=>{
+const start=document.getElementById("start").value.trim();
+const end=document.getElementById("end").value.trim();
+const detail=document.getElementById("detail").value.trim();
+
+if(!start||!detail){
+alert("주소와 요청 내용을 입력하세요.");
+return;
+}
+
+saveOrder({
+type,
+detail,
+address:start+(end?" → "+end:""),
+total:0
+});
+alert("시연용 신청이 저장되었습니다. 실제 접수는 되지 않습니다.");
+home();
+};
+back(home);
+}
+
+function historyPage(){
+const orders=readOrders().slice().reverse();
+app.innerHTML="<h2>📋 내 주문 내역</h2>";
+
+if(!orders.length){
+const p=document.createElement("p");
+p.textContent="저장된 주문이 없습니다.";
+app.appendChild(p);
+}
+
+orders.forEach(o=>{
+const card=document.createElement("div");
+card.className="card";
+card.innerHTML=`
+<h3>${safe(o.type)}</h3>
+<p>${safe(o.detail)}</p>
+<p>${safe(o.address)}</p>
+<p class="price">${money(o.total)}</p>
+<p class="small">${safe(o.date)}</p>
+<p class="small">${safe(o.status)}</p>`;
+app.appendChild(card);
+});
+back(home);
+}
+
+onAuthStateChanged(auth,currentUser=>{
+user=currentUser;
+cart=[];
+if(user){
+home();
+}else{
+loginPage();
+}
+},e=>{
+showSopError("Firebase 인증 오류: "+(e.code||e.message));
 });
 </script>
-
 </body>
 </html>
