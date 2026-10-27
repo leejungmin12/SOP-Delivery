@@ -5,74 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOP 배달</title>
 <style>
-body {
-  margin: 0;
-  background: #101014;
-  color: white;
-  font-family: sans-serif;
-}
-header {
-  background: #181818;
-  padding: 25px;
-  text-align: center;
-}
-h1 { color: #e8b85c; font-size: 48px; }
-button {
-  background: #e8b85c;
-  color: #111;
-  border: none;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 8px 0;
-  width: 100%;
-  font-size: 18px;
-  font-weight: bold;
-}
-.page { padding: 20px; }
-.card {
-  background: #222229;
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: <!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SOP 배달</title>
-<style>
 *{box-sizing:border-box}
-body{margin:0;background:#101014;color:white;font-family:Arial,sans-serif}
-header{background:#181818;text-align:center;padding:30px 15px}
-h1{color:#e8b85c;font-size:52px;margin:0}
-header p{margin:8px}
+body{
+  margin:0;
+  background:#101014;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+header{
+  background:#181818;
+  padding:35px 20px;
+  text-align:center;
+}
+h1{
+  color:#e8b85c;
+  font-size:55px;
+  margin:0;
+}
 main{padding:20px}
-h2{font-size:25px}
-.card{background:#222;border-radius:16px;padding:20px;margin:15px 0}
-button{background:#e8b85c;color:#111;border:0;border-radius:12px;padding:15px;width:100%;font-size:17px;font-weight:bold;margin:8px 0}
-input,textarea{width:100%;padding:15px;margin:8px 0;background:#333;color:white;border:1px solid <!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SOP 배달</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#101014;color:#fff;font-family:Arial,sans-serif}
-header{background:#181818;text-align:center;padding:24px 15px}
-h1{color:#e8b85c;font-size:48px;margin:0}
-header p{margin:6px}
-main{padding:20px;max-width:650px;margin:auto}
 h2{color:#e8b85c}
-.card{background:#222;border-radius:16px;padding:18px;margin:14px 0}
-button{background:#e8b85c;color:#111;border:0;border-radius:12px;padding:15px;width:100%;font-size:16px;font-weight:bold;margin:7px 0}
+.card{
+  background:#222;
+  padding:20px;
+  border-radius:15px;
+}
+input,button{
+  width:100%;
+  padding:15px;
+  margin:8px 0;
+  border-radius:10px;
+  font-size:16px;
+}
+input{
+  background:#333;
+  color:white;
+  border:1px solid #555;
+}
+button{
+  background:#e8b85c;
+  color:#111;
+  border:0;
+  font-weight:bold;
+}
 button:disabled{opacity:.5}
-input,textarea{width:100%;padding:14px;margin:8px 0;background:#333;color:white;border:1px solid #555;border-radius:10px;font-size:16px}
-.price{color:#e8b85c;font-weight:bold}
-.small{color:#aaa;font-size:13px}
-.error{color:#ff8585}
-.success{color:#83e5a0}
-.row{display:flex;gap:10px}
-.row button{flex:1}
+#message{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -88,159 +64,125 @@ input,textarea{width:100%;padding:14px;margin:8px 0;background:#333;color:white;
 <p>Firebase 로그인 서비스를 확인하고 있습니다.</p>
 </main>
 
+<script>
+const appScreen=document.getElementById("app");
+
+window.addEventListener("error",function(e){
+  showError("스크립트 오류: "+(e.message||"파일 로딩 실패"));
+});
+
+window.addEventListener("unhandledrejection",function(e){
+  showError("연결 오류: "+String(e.reason));
+});
+
+function showError(message){
+  appScreen.innerHTML="";
+  const title=document.createElement("h2");
+  title.textContent="연결 오류";
+  const detail=document.createElement("p");
+  detail.textContent=message;
+  appScreen.append(title,detail);
+}
+
+setTimeout(function(){
+  if(appScreen.textContent.includes("연결 중...")){
+    showError("15초 동안 Firebase 응답이 없습니다. 인터넷 연결과 WebView 설정을 확인하세요.");
+  }
+},15000);
+</script>
+
 <script type="module">
 import {initializeApp} from
 "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
 import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-signOut,
-onAuthStateChanged
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
 } from
 "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const firebaseConfig={
-apiKey:"AIzaSyDqB3PZ5SBwo1JrxBSqSFiJByB5o23X_Xg",
-authDomain:"sop-delivery.firebaseapp.com",
-projectId:"sop-delivery",
-storageBucket:"sop-delivery.firebasestorage.app",
-messagingSenderId:"169609846426",
-appId:"1:169609846426:web:4efbc158d9abeca1214923"
+  apiKey:"AIzaSyDqB3PZ5SBwo1JrxBSqSFiJByB5o23X_Xg",
+  authDomain:"sop-delivery.firebaseapp.com",
+  projectId:"sop-delivery",
+  appId:"1:169609846426:web:4efbc158d9abeca1214923"
 };
 
 const firebaseApp=initializeApp(firebaseConfig);
 const auth=getAuth(firebaseApp);
+const screen=document.getElementById("app");
 
-const app=document.getElementById("app");
+function loginScreen(){
+  screen.innerHTML=`
+    <h2>🔐 SOP 로그인</h2>
+    <div class="card">
+      <input id="email" type="email" placeholder="이메일">
+      <input id="password" type="password"
+        placeholder="비밀번호 (6자 이상)">
+      <button id="login">로그인</button>
+      <button id="signup">회원가입</button>
+      <p id="message"></p>
+    </div>
+  `;
 
-let user=null;
-let cart=[];
-
-const restaurants=[
-{
-name:"SOP 치킨",
-menu:[
-{name:"후라이드 치킨",price:19000},
-{name:"양념 치킨",price:21000}
-]
-},
-{
-name:"SOP 피자",
-menu:[
-{name:"콤비네이션 피자",price:18000},
-{name:"치즈 피자",price:16000}
-]
-},
-{
-name:"SOP 분식",
-menu:[
-{name:"떡볶이",price:5000},
-{name:"김밥",price:4000}
-]
-}
-];
-
-function money(n){
-return Number(n||0).toLocaleString("ko-KR")+"원";
+  document.getElementById("login").onclick=
+    ()=>authenticate(false);
+  document.getElementById("signup").onclick=
+    ()=>authenticate(true);
 }
 
-function safe(value){
-return String(value??"").replace(/[&<>"']/g,c=>({
-"&":"&amp;",
-"<":"&lt;",
-">":"&gt;",
-'"':"&quot;",
-"'":"&#39;"
-})[c]);
+async function authenticate(isSignup){
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  const message=document.getElementById("message");
+
+  if(!email||password.length<6){
+    message.textContent="이메일과 6자 이상의 비밀번호를 입력하세요.";
+    return;
+  }
+
+  document.getElementById("login").disabled=true;
+  document.getElementById("signup").disabled=true;
+
+  try{
+    if(isSignup){
+      await createUserWithEmailAndPassword(auth,email,password);
+    }else{
+      await signInWithEmailAndPassword(auth,email,password);
+    }
+  }catch(error){
+    message.textContent="오류: "+error.code;
+    document.getElementById("login").disabled=false;
+    document.getElementById("signup").disabled=false;
+  }
 }
 
-function requireUser(){
-if(!user){
-loginPage();
-return false;
-}
-return true;
-}
-
-function orderKey(){
-return "sop_orders_"+user.uid;
-}
-
-function readOrders(){
-try{
-const data=JSON.parse(localStorage.getItem(orderKey())||"[]");
-return Array.isArray(data)?data:[];
-}catch(e){
-return [];
-}
+function homeScreen(user){
+  screen.innerHTML=`
+    <h2>🎉 SOP 로그인 성공!</h2>
+    <div class="card">
+      <p id="userEmail"></p>
+      <p>Firebase 회원 인증이 정상 작동합니다.</p>
+      <button id="logout">로그아웃</button>
+    </div>
+  `;
+  document.getElementById("userEmail").textContent=user.email;
+  document.getElementById("logout").onclick=()=>signOut(auth);
 }
 
-function saveOrder(order){
-const orders=readOrders();
-orders.push({
-...order,
-date:new Date().toLocaleString("ko-KR")
+onAuthStateChanged(auth,user=>{
+  if(user){
+    homeScreen(user);
+  }else{
+    loginScreen();
+  }
+},error=>{
+  showError("인증 오류: "+error.code);
 });
-localStorage.setItem(orderKey(),JSON.stringify(orders));
-}
+</script>
 
-function loginPage(){
-app.innerHTML=`
-<h2>🔐 SOP 로그인</h2>
-<div class="card">
-<input id="email" type="email"
-autocomplete="email" placeholder="이메일">
-
-<input id="password" type="password"
-autocomplete="current-password"
-placeholder="비밀번호 (6자 이상)">
-
-<button id="loginBtn">로그인</button>
-<button id="signupBtn">회원가입</button>
-
-<p id="message" class="small"></p>
-</div>
-<p class="small">
-회원가입 시 Firebase Authentication에
-계정이 생성됩니다.
-</p>
-`;
-
-document.getElementById("loginBtn").onclick=login;
-document.getElementById("signupBtn").onclick=signup;
-}
-
-function credentials(){
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
-
-if(!email||!password){
-throw new Error("이메일과 비밀번호를 입력하세요.");
-}
-if(password.length<6){
-throw new Error("비밀번호는 6자 이상 입력하세요.");
-}
-return {email,password};
-}
-
-function showMessage(message){
-const el=document.getElementById("message");
-if(el){
-el.className="error";
-el.textContent=message;
-}
-}
-
-function authError(error){
-switch(error.code){
-case "auth/email-already-in-use":
-return "이미 가입된 이메일입니다.";
-case "auth/invalid-email":
-return "이메일 주소를 확인하세요.";
-case "auth/weak-password":
-return "더 안전한 비밀번호를 입력하세요.";
-case "auth/invalid-credential":
-return "이메일 또는 비밀번호를 확인하세요.";
-case "auth/too
+</body>
+</html>
