@@ -424,6 +424,116 @@ $("loadingPage").classList.add("hidden");
 showPage("loginPage");
 message("로그인 연결 오류: "+error.message);
 });
+// ===== SOP 관리자 주문 관리 =====
+
+async function openAdminPage() {
+  if (!auth.currentUser) {
+    alert("로그인이 필요합니다.");
+    return;
+  }
+
+  try {
+    const { doc, getDoc, getDocs, updateDoc,
+            collection, query, orderBy } =
+      await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
+
+    const adminRef = doc(db, "admins", auth.currentUser.uid);
+    const adminSnap = await getDoc(adminRef);
+
+    if (!adminSnap.exists() ||
+        adminSnap.data().role !== "admin" ||
+        adminSnap.data().active !== true) {
+      alert("관리자 권한이 없습니다.");
+      return;
+    }
+
+    const ordersSnap = await getDocs(
+      query(collection(db, "orders"), orderBy("createdAt", "desc"))
+    );
+
+    let html = `
+      <h2>🛠 SOP 관리자 주문 관리</h2>
+      <button id="adminBack">← 돌아가기</button>
+      <div id="adminOrders"></div>
+    `;
+
+    app.innerHTML = html;
+
+    document.getElementById("adminBack").onclick = home;
+
+    const root = document.getElementById("adminOrders");
+
+    if (ordersSnap.empty) {
+      root.textContent = "접수된 주문이 없습니다.";
+      return;
+    }
+
+    ordersSnap.forEach(orderDoc => {
+      const order = orderDoc.data();
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = "주문 상태: " + (order.status || "접수 대기");
+
+      const details = document.createElement("p");
+      details.textContent = "주문: " +
+        (Array.isArray(order.items)
+          ? order.items.map(x => x.name + " × " + x.qty).join(", ")
+          : String(order.items || ""));
+
+      const address = document.createElement("p");
+      address.textContent = "주소: " + (order.address || "");
+
+      const total = document.createElement("p");
+      total.textContent = "금액: " +
+        Number(order.total || 0).toLocaleString("ko-KR") + "원";
+
+      const select = document.createElement("select");
+
+      ["접수 대기", "주문 접수", "조리 중",
+       "배달 중", "배달 완료", "주문 취소"].forEach(status => {
+        const option = document.createElement("option");
+        option.value = status;
+        option.textContent = status;
+        select.appendChild(option);
+      });
+
+      select.value = order.status || "접수 대기";
+
+      const button = document.createElement("button");
+      button.textContent = "상태 변경 저장";
+
+      button.onclick = async () => {
+        try {
+          await updateDoc(doc(db, "orders", orderDoc.id), {
+            status: select.value
+          });
+          title.textContent = "주문 상태: " + select.value;
+          alert("주문 상태가 변경되었습니다.");
+        } catch (error) {
+          alert("변경 실패: " + error.message);
+        }
+      };
+
+      card.append(title, details, address, total, select, button);
+      root.appendChild(card);
+    });
+
+  } catch (error) {
+    alert("관리자 화면 오류: " + error.message);
+  }
+}
+
+// 관리자 화면 버튼
+const adminButton = document.createElement("button");
+adminButton.textContent = "🛠 관리자 주문 관리";
+adminButton.onclick = openAdminPage;
+
+const homePage = document.getElementById("homePage");
+if (homePage) {
+  homePage.appendChild(adminButton);
+}
 </script>
 </body>
 </html>
