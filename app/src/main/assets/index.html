@@ -457,9 +457,9 @@ async function openAdminPage() {
       <div id="adminOrders"></div>
     `;
 
-    app.innerHTML = html;
+    
 
-    document.getElementById("adminBack").onclick = home;
+    document.getElementById("adminBack").onclick = () => location.reload();
 
     const root = document.getElementById("adminOrders");
 
